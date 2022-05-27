@@ -1,8 +1,10 @@
-const sprites = new Image();
-sprites.src = "./sprites.png";
+const sprites = new Image()
+sprites.src = './sprites.png'
+const som_HIT = new Audio()
+som_HIT.src = './efeitos/efeitos_hit.wav'
 
-const canvas = document.querySelector("canvas");
-const contexto = canvas.getContext("2d");
+const canvas = document.querySelector('canvas');
+const contexto = canvas.getContext('2d');
 
 const planoDeFundo = {
     spriteX: 390,
@@ -51,36 +53,51 @@ const chao = {
     }
 }
 
-const flappyBird = {
-    spriteX: 0,
-    spriteY: 0,
-    largura: 33,
-    altura: 24,
-    x: 10,
-    y: 50,
-    gravidade: 0.25,
-    velocidade: 0,
-    atualiza() {
-        flappyBird.velocidade = flappyBird.velocidade + flappyBird.gravidade
-        flappyBird.y = flappyBird.y + flappyBird.velocidade
-    },
-    desenha() {
-        contexto.drawImage(
-            sprites,
-            flappyBird.spriteX, flappyBird.spriteY, // Sprite X, Sprite Y
-            flappyBird.largura, flappyBird.altura, // Tamanho do Sprite
-            flappyBird.x, flappyBird.y, // Posição do Sprite no Canvas
-            flappyBird.largura, flappyBird.altura, // Tamanho do Sprite no Canvas
-        )
+function criaFlappyBird() {
+    const flappyBird = {
+        spriteX: 0,
+        spriteY: 0,
+        largura: 33,
+        altura: 24,
+        x: 10,
+        y: 50,
+        pulo: 4.6,
+        pula() {
+            flappyBird.velocidade = -flappyBird.pulo
+        },
+        gravidade: 0.25,
+        velocidade: 0,
+        atualiza() {
+            if (fazColisao(flappyBird, chao)) {
+                som_HIT.play()
 
-        contexto.drawImage(
-            sprites, 
-            chao.spriteX, chao.spriteY, 
-            chao.largura, chao.altura, 
-            (chao.x + chao.largura), chao.y, 
-            chao.largura, chao.altura
-        )
+                setTimeout(() => {
+                    mudaParaTela(Telas.INICIO)
+                }, 500)
+                return
+            }
+            flappyBird.velocidade = flappyBird.velocidade + flappyBird.gravidade
+            flappyBird.y = flappyBird.y + flappyBird.velocidade
+        },
+        desenha() {
+            contexto.drawImage(
+                sprites,
+                flappyBird.spriteX, flappyBird.spriteY, // Sprite X, Sprite Y
+                flappyBird.largura, flappyBird.altura, // Tamanho do Sprite
+                flappyBird.x, flappyBird.y, // Posição do Sprite no Canvas
+                flappyBird.largura, flappyBird.altura, // Tamanho do Sprite no Canvas
+            )
+    
+            contexto.drawImage(
+                sprites, 
+                chao.spriteX, chao.spriteY, 
+                chao.largura, chao.altura, 
+                (chao.x + chao.largura), chao.y, 
+                chao.largura, chao.altura
+            )
+        }
     }
+    return flappyBird
 }
 
 const mensagemGetReady = {
@@ -102,18 +119,35 @@ const mensagemGetReady = {
 }
 
 // [telas]
+const globais = {}
 let telaAtiva = {}
+
+function fazColisao(flappyBird, chao) {
+    const flappyBirdY = flappyBird.y + flappyBird.altura
+    const chaoY = chao.y
+    if (flappyBirdY >= chaoY) {
+        return true
+    }
+    return false
+}
 
 function mudaParaTela(novaTela) {
     telaAtiva = novaTela
+
+    if (telaAtiva.inicializa) {
+        telaAtiva.inicializa()
+    }
 }
 
 const Telas = {
     INICIO: {
+        inicializa() {
+            globais.flappyBird = criaFlappyBird()
+        },
         desenha() {
             planoDeFundo.desenha()
             chao.desenha()
-            flappyBird.desenha()
+            globais.flappyBird.desenha()
             mensagemGetReady.desenha();
         },
         click() {
@@ -129,10 +163,13 @@ Telas.JOGO = {
     desenha() {
         planoDeFundo.desenha()
         chao.desenha()
-        flappyBird.desenha()
+        globais.flappyBird.desenha()
+    },
+    click() {
+        globais.flappyBird.pula()
     },
     atualiza() {
-        flappyBird.atualiza()
+        globais.flappyBird.atualiza()
     }
 }
 
